@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>校園失竊事件｜密室逃脫（手機版走路版）</title>
+  <title>校園失竊事件｜密室逃脫（手機版走路版＋信封）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     * { box-sizing: border-box; }
@@ -78,7 +78,6 @@
 
     .scene.active { display: block; }
 
-    /* 共用地板邊框 */
     .scene-inner {
       position: absolute;
       inset: 7%;
@@ -89,7 +88,6 @@
         inset 0 14px 0 rgba(255,255,255,0.4);
     }
 
-    /* 大門（共用樣式） */
     .door {
       position: absolute;
       width: 18%;
@@ -111,7 +109,6 @@
       background: #8b5a2b;
     }
 
-    /* marker（驚嘆號） */
     .marker {
       position: absolute;
       width: 32px;
@@ -121,7 +118,7 @@
       background: #ff3b30;
       color: #fff;
       font-weight: 800;
-      cursor: default; /* 用走路觸發，不用點擊 */
+      cursor: default;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -135,7 +132,6 @@
       opacity: 0.85;
     }
 
-    /* 玩家角色 */
     .player {
       position: absolute;
       width: 30px;
@@ -154,9 +150,7 @@
       z-index: 5;
     }
 
-    /* ===== 每個場景的佈置 ===== */
-
-    /* 0. 大廳 Lobby */
+    /* 0. 大廳 */
     .scene-lobby .desk {
       position: absolute;
       width: 32%;
@@ -194,7 +188,7 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.12);
     }
 
-    /* 1. 教室 A：書本密碼 */
+    /* 1. 教室 A */
     .scene-classA .board {
       position: absolute;
       top: 7%;
@@ -386,7 +380,6 @@
     }
     .success-banner.show { display: block; }
 
-    /* 控制區（手機方向鍵） */
     .controls {
       margin-top: 10px;
       display: flex;
@@ -434,8 +427,95 @@
       background: #dce3ff;
     }
 
-    /* ===== Modal（題目視窗） ===== */
+    /* ===== 信封動畫 Overlay ===== */
+    .envelope-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 950;
+      padding: 16px;
+    }
+    .envelope-overlay.active {
+      display: flex;
+      animation: fadeIn .2s ease-out;
+    }
 
+    .envelope-card {
+      position: relative;
+      width: 240px;
+      height: 160px;
+      cursor: pointer;
+      transform-origin: center;
+      animation: popIn .25s ease-out;
+    }
+
+    .envelope-body {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 70%;
+      background: #fefaf2;
+      border-radius: 0 0 14px 14px;
+      border: 2px solid #e0c9a5;
+      border-top: none;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+    }
+
+    .envelope-flap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 70%;
+      background: linear-gradient(135deg,#f3d2a2 0%,#f6e0b8 50%,#f3d2a2 100%);
+      clip-path: polygon(0 0, 100% 0, 50% 72%);
+      border-radius: 14px 14px 0 0;
+      border: 2px solid #e0c9a5;
+      border-bottom: none;
+    }
+
+    .envelope-inner {
+      position: absolute;
+      inset: 24% 14% 18% 14%;
+      background: #ffffff;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 8px 10px;
+      font-size: .8rem;
+      color: #444;
+    }
+
+    .envelope-inner p {
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .envelope-btn {
+      align-self: flex-end;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: none;
+      background: #355dff;
+      color: #fff;
+      font-size: .8rem;
+      cursor: pointer;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.6); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ===== 題目 Modal ===== */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -544,10 +624,9 @@
 </head>
 <body>
   <div class="game-container">
-    <h1>校園失竊事件：密室逃脫（走路版）</h1>
+    <h1>校園失竊事件：密室逃脫（走路＋信封版）</h1>
     <p class="subtitle">
-      操控角色在校園平面圖上走到紅色驚嘆號，才能觸發題目，找回失蹤的校史原稿，
-      同時練習特教與身心障礙相關的觀念！
+      操控角色在校園平面圖上走到紅色驚嘆號，先收到一封「線索信」，再解出特教與身心障礙相關的謎題，找回失蹤的校史原稿！
     </p>
 
     <div class="top-info">
@@ -564,12 +643,11 @@
           <div class="desk"></div>
           <div class="notice">大廳　｜　信封裡藏著第一個線索</div>
           <button class="marker" data-scene="0" style="top:40%;left:50%;">!</button>
-          <!-- 玩家起始位置在大廳 -->
           <div class="player" id="player">我</div>
         </div>
       </div>
 
-      <!-- 1. 教室 A：書本密碼 -->
+      <!-- 1. 教室 A -->
       <div class="scene scene-classA" data-scene="1">
         <div class="scene-inner">
           <div class="board"></div>
@@ -585,7 +663,7 @@
         </div>
       </div>
 
-      <!-- 2. 教室 B：亮暗燈號 -->
+      <!-- 2. 教室 B -->
       <div class="scene scene-classB" data-scene="2">
         <div class="scene-inner">
           <div class="board"></div>
@@ -599,7 +677,7 @@
         </div>
       </div>
 
-      <!-- 3. 教室 C：體育儲物櫃 -->
+      <!-- 3. 教室 C -->
       <div class="scene scene-classC" data-scene="3">
         <div class="scene-inner">
           <div class="cabinet"></div>
@@ -611,7 +689,7 @@
         </div>
       </div>
 
-      <!-- 4. 辦公室：最終密碼箱 -->
+      <!-- 4. 辦公室 -->
       <div class="scene scene-office" data-scene="4">
         <div class="scene-inner">
           <div class="desk"></div>
@@ -624,8 +702,7 @@
 
     <div class="controls">
       <div class="controls-info">
-        用下方方向鍵移動藍色小人物，走到紅色驚嘆號附近就會觸發該場景的謎題。
-        長按按鈕可以持續移動。
+        用下方方向鍵移動藍色小人物，走到紅色驚嘆號附近時會先收到「信封」，點信封打開後才會看到謎題。
       </div>
       <div class="controls-grid">
         <div class="controls-row">
@@ -640,12 +717,24 @@
     </div>
 
     <p class="status-text">
-      小提示：每個場景中的 <span>紅色驚嘆號 ❗</span> 都代表一個謎題，必須讓角色走到附近才會開啟。
+      小提示：每個場景中的 <span>紅色驚嘆號 ❗</span> 都代表一個線索點，先收到信封再解題，故事會更有代入感。
     </p>
 
     <div id="successBanner" class="success-banner">
       🎉 恭喜你在時限內找回了校史原稿！也把許多特教與身心障礙相關的概念實際應用在解謎過程中，
       可以和同學一起回顧每一關的重點。
+    </div>
+  </div>
+
+  <!-- 信封 Overlay -->
+  <div class="envelope-overlay" id="envelopeOverlay" aria-hidden="true">
+    <div class="envelope-card" id="envelopeCard">
+      <div class="envelope-body"></div>
+      <div class="envelope-flap"></div>
+      <div class="envelope-inner">
+        <p>你在這裡發現了一封神祕的線索信件，裡面好像藏著與特教有關的重要訊息。</p>
+        <button class="envelope-btn" id="openLetterBtn">打開信件</button>
+      </div>
     </div>
   </div>
 
@@ -669,7 +758,7 @@
   </div>
 
   <script>
-    // ===== 題目資料（特教主題 + 大廳劇情 + A 題順序打亂） =====
+    // ===== 題目資料 =====
     const scenesData = [
       {
         id: 0,
@@ -734,23 +823,19 @@
       }
     ];
 
-    // ===== 遊戲時間：15 分鐘 =====
     const TOTAL_TIME_SEC = 15 * 60;
     let remainingSec = TOTAL_TIME_SEC;
     let timerId = null;
     let currentScene = 0;
     const obtainedCodes = [];
 
-    // 玩家座標（百分比，相對於 scene-inner）
     let playerX = 80;
     let playerY = 80;
     const STEP = 5;
 
-    // 連續移動相關
     let moveIntervalId = null;
     let modalIsOpen = false;
 
-    // 每個場景的玩家起始位置
     const sceneStartPositions = {
       0: { x: 80, y: 75 },
       1: { x: 80, y: 78 },
@@ -759,7 +844,6 @@
       4: { x: 80, y: 78 }
     };
 
-    // ===== DOM =====
     const sceneEls = document.querySelectorAll(".scene");
     const markerEls = document.querySelectorAll(".marker");
     const locationLabel = document.getElementById("locationLabel");
@@ -780,6 +864,12 @@
 
     const ctrlBtns = document.querySelectorAll(".ctrl-btn");
     const playerEl = document.getElementById("player");
+
+    // 信封相關
+    const envelopeOverlay = document.getElementById("envelopeOverlay");
+    const envelopeCard = document.getElementById("envelopeCard");
+    const openLetterBtn = document.getElementById("openLetterBtn");
+    let pendingSceneIndex = null;
 
     function formatTime(sec) {
       const m = Math.floor(sec / 60);
@@ -808,6 +898,7 @@
 
     function handleTimeUp() {
       stopMoving();
+      hideEnvelope();
       feedbackBox.textContent =
         "時間到了！這一輪挑戰結束，可以請老師或主持人一起回顧解題過程，再重新挑戰一次。";
       feedbackBox.classList.remove("correct-text");
@@ -927,6 +1018,21 @@
       showScene(nextIndex);
     }
 
+    function isEnvelopeOpen() {
+      return envelopeOverlay.classList.contains("active");
+    }
+
+    function showEnvelope(sceneIndex) {
+      pendingSceneIndex = sceneIndex;
+      envelopeOverlay.classList.add("active");
+      envelopeOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function hideEnvelope() {
+      envelopeOverlay.classList.remove("active");
+      envelopeOverlay.setAttribute("aria-hidden", "true");
+    }
+
     function checkPlayerNearMarker() {
       const sceneEl = document.querySelector(
         `.scene[data-scene="${currentScene}"]`
@@ -947,10 +1053,10 @@
       const dy = playerCy - markerCy;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      const THRESHOLD = 40; // 觸發距離
+      const THRESHOLD = 40;
 
-      if (distance <= THRESHOLD && !modalIsOpen) {
-        openPuzzle(currentScene);
+      if (distance <= THRESHOLD && !modalIsOpen && !isEnvelopeOpen()) {
+        showEnvelope(currentScene);
       }
     }
 
@@ -967,7 +1073,6 @@
         playerX += STEP;
       }
 
-      // 邊界限制，避免走出場景
       if (playerX < 10) playerX = 10;
       if (playerX > 90) playerX = 90;
       if (playerY < 12) playerY = 12;
@@ -977,16 +1082,15 @@
       checkPlayerNearMarker();
     }
 
-    // ===== 連續移動控制 =====
     function startMoving(direction) {
       if (remainingSec <= 0) return;
-      stopMoving();            // 先確保沒有舊的 interval
-      movePlayer(direction);   // 先移動一步
+      stopMoving();
+      movePlayer(direction);
       moveIntervalId = setInterval(() => {
-        if (!modalIsOpen && remainingSec > 0) {
+        if (!modalIsOpen && remainingSec > 0 && !isEnvelopeOpen()) {
           movePlayer(direction);
         }
-      }, 120); // 每 120ms 移動一次，可再調整快慢
+      }, 120);
     }
 
     function stopMoving() {
@@ -996,13 +1100,10 @@
       }
     }
 
-    // ===== 事件綁定 =====
-
-    // 手機方向鍵（長按持續移動）
+    // 手機方向鍵
     ctrlBtns.forEach((btn) => {
       const dir = btn.dataset.dir;
 
-      // 點一下也會移動（給想單步走的人）
       btn.addEventListener("click", () => {
         movePlayer(dir);
       });
@@ -1022,15 +1123,39 @@
       btn.addEventListener("touchcancel", stopMoving);
     });
 
-    // 鍵盤方向鍵（電腦玩時也可使用）
+    // 鍵盤方向鍵
     window.addEventListener("keydown", (e) => {
       if (remainingSec <= 0) return;
-      if (modalIsOpen) return;
+      if (modalIsOpen || isEnvelopeOpen()) return;
 
       if (e.key === "ArrowUp") movePlayer("up");
       else if (e.key === "ArrowDown") movePlayer("down");
       else if (e.key === "ArrowLeft") movePlayer("left");
       else if (e.key === "ArrowRight") movePlayer("right");
+    });
+
+    // 信封點擊：打開題目
+    function openLetterAndPuzzle() {
+      hideEnvelope();
+      const targetScene = pendingSceneIndex != null ? pendingSceneIndex : currentScene;
+      openPuzzle(targetScene);
+      pendingSceneIndex = null;
+    }
+
+    openLetterBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openLetterAndPuzzle();
+    });
+
+    envelopeCard.addEventListener("click", () => {
+      openLetterAndPuzzle();
+    });
+
+    envelopeOverlay.addEventListener("click", (e) => {
+      // 點灰色背景就關掉信封，不開題目
+      if (e.target === envelopeOverlay) {
+        hideEnvelope();
+      }
     });
 
     submitBtn.addEventListener("click", () => {
@@ -1097,7 +1222,7 @@
       if (e.target === modalBackdrop) closeModal();
     });
 
-    // ===== 初始化 =====
+    // 初始化
     attachPlayerToScene(0);
     setPlayerToSceneStart(0);
     updateLocationLabel();
