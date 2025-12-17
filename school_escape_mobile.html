@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>校園失竊事件｜密室逃脫（手機版走路版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f3f7ff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #222;
+    }
+
+    .game-container {
+      background: #fff;
+      width: 95%;
+      max-width: 960px;
+      padding: 16px 16px 20px;
+      border-radius: 18px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: .9rem;
+      color: #555;
+      margin: 4px 0 12px;
+    }
+
+    .top-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      font-size: .85rem;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #334;
+    }
+
+    #timer {
+      font-weight: 600;
+      color: #c0392b;
+    }
+
+    .map-wrapper {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid #d0d7f7;
+      background: #f0d3a5;
+      aspect-ratio: 4/3;
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: none;
+    }
+
+    .scene.active { display: block; }
+
+    /* 共用地板邊框 */
+    .scene-inner {
+      position: absolute;
+      inset: 7%;
+      background: #f4d7aa;
+      border-radius: 16px;
+      box-shadow:
+        inset 0 0 0 3px rgba(157,109,56,0.35),
+        inset 0 14px 0 rgba(255,255,255,0.4);
+    }
+
+    /* 大門（共用樣式） */
+    .door {
+      position: absolute;
+      width: 18%;
+      height: 16%;
+      bottom: 0;
+      left: 41%;
+      background: #d59b61;
+      border-radius: 10px 10px 0 0;
+      box-shadow: 0 -4px 0 rgba(0,0,0,0.2);
+    }
+    .door::after {
+      content: "";
+      position: absolute;
+      right: 12%;
+      top: 40%;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #8b5a2b;
+    }
+
+    /* marker（驚嘆號） */
+    .marker {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: #ff3b30;
+      color: #fff;
+      font-weight: 800;
+      cursor: default; /* 這版用走路觸發，不用點擊 */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.28);
+      font-size: 1.1rem;
+    }
+
+    .marker.done {
+      background: #4cd964;
+      opacity: 0.85;
+    }
+
+    /* 玩家角色 */
+    .player {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #3498db;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #fff;
+      z-index: 5;
+    }
+
+    /* ===== 每個場景的佈置 ===== */
+
+    /* 0. 大廳 Lobby */
+    .scene-lobby .desk {
+      position: absolute;
+      width: 32%;
+      height: 18%;
+      top: 35%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #c77a3a;
+      border-radius: 10px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    }
+    .scene-lobby .desk::before {
+      content: "";
+      position: absolute;
+      width: 40%;
+      height: 40%;
+      top: 15%;
+      left: 30%;
+      background: #fefcf1;
+      border-radius: 6px;
+      box-shadow:
+        0 0 0 2px rgba(0,0,0,0.1),
+        8px 6px 0 0 rgba(199,122,58,0.5);
+    }
+    .scene-lobby .notice {
+      position: absolute;
+      top: 11%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.9);
+      font-size: .8rem;
+      color: #555;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+    }
+
+    /* 1. 教室 A：書本密碼 */
+    .scene-classA .board {
+      position: absolute;
+      top: 7%;
+      left: 8%;
+      width: 84%;
+      height: 15%;
+      background: #356b48;
+      border-radius: 8px;
+      box-shadow: inset 0 0 0 3px #263e2e;
+    }
+    .scene-classA .teacher-desk {
+      position: absolute;
+      top: 32%;
+      left: 34%;
+      width: 32%;
+      height: 16%;
+      background: #c77a3a;
+      border-radius: 10px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    }
+    .scene-classA .book-row {
+      position: absolute;
+      bottom: 16%;
+      left: 10%;
+      right: 10%;
+      height: 26%;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .scene-classA .book {
+      width: 18%;
+      height: 70%;
+      background: #f7d98b;
+      border-radius: 4px;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.2);
+      position: relative;
+    }
+    .scene-classA .book:nth-child(1){background:#f6c15b;}
+    .scene-classA .book:nth-child(2){background:#f48b6a;}
+    .scene-classA .book:nth-child(3){background:#7ec4e0;}
+    .scene-classA .book:nth-child(4){background:#9ad07d;}
+    .scene-classA .book::after{
+      content:"";
+      position:absolute;
+      left:15%;
+      right:15%;
+      top:20%;
+      bottom:25%;
+      border-radius:3px;
+      border:2px solid rgba(255,255,255,0.7);
+    }
+
+    /* 2. 教室 B：亮暗燈號 */
+    .scene-classB .board {
+      position: absolute;
+      top: 9%;
+      left: 10%;
+      width: 80%;
+      height: 14%;
+      background: #2f4e7a;
+      border-radius: 10px;
+      box-shadow: inset 0 0 0 3px #1f3550;
+    }
+    .scene-classB .lamp-row {
+      position: absolute;
+      top: 40%;
+      left: 18%;
+      width: 64%;
+      height: 12%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .lamp {
+      width: 22%;
+      height: 70%;
+      border-radius: 999px;
+      background: #999;
+      box-shadow: inset 0 0 0 3px rgba(0,0,0,0.25);
+      position: relative;
+    }
+    .lamp::after{
+      content:"";
+      position:absolute;
+      inset:14%;
+      border-radius:999px;
+      background: #222;
+    }
+    .lamp.on::after{
+      background:#ffe55b;
+      box-shadow:0 0 10px rgba(255,229,91,0.8);
+    }
+
+    /* 3. 教室 C：體育儲物櫃 */
+    .scene-classC .cabinet {
+      position: absolute;
+      left: 10%;
+      top: 20%;
+      width: 30%;
+      height: 50%;
+      background: #f3c85b;
+      border-radius: 8px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    }
+    .scene-classC .cabinet::before {
+      content:"";
+      position:absolute;
+      left:50%;
+      top:10%;
+      bottom:10%;
+      width:2px;
+      background:#d49c3b;
+    }
+    .scene-classC .ball {
+      position:absolute;
+      width:18%;
+      padding-bottom:18%;
+      border-radius:50%;
+      background:#e47356;
+      box-shadow:0 3px 0 rgba(0,0,0,0.2);
+    }
+    .scene-classC .ball:nth-child(1){left:52%;top:36%;}
+    .scene-classC .ball:nth-child(2){left:67%;top:55%;background:#6bb5e3;}
+    .scene-classC .ball:nth-child(3){left:77%;top:36%;background:#8bcf7f;}
+
+    /* 4. 辦公室：最終密碼箱 */
+    .scene-office .desk {
+      position: absolute;
+      top: 38%;
+      left: 28%;
+      width: 44%;
+      height: 20%;
+      background: #c77a3a;
+      border-radius: 10px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    }
+    .scene-office .safe {
+      position:absolute;
+      top:18%;
+      left:30%;
+      width:40%;
+      height:60%;
+      background:#e0e4f5;
+      border-radius:8px;
+      box-shadow:
+        0 3px 0 rgba(0,0,0,0.25),
+        inset 0 0 0 3px #9aa3ce;
+    }
+    .scene-office .safe::before {
+      content:"";
+      position:absolute;
+      left:14%;
+      right:48%;
+      top:28%;
+      bottom:28%;
+      border-radius:6px;
+      border:3px solid #9aa3ce;
+    }
+    .scene-office .safe::after {
+      content:"";
+      position:absolute;
+      right:16%;
+      top:32%;
+      width:22%;
+      height:36%;
+      border-radius:50%;
+      border:4px solid #9aa3ce;
+    }
+
+    .status-text {
+      font-size: .85rem;
+      margin-top: 6px;
+      color: #444;
+    }
+    .status-text span {
+      font-weight: 600;
+      color: #355dff;
+    }
+
+    .success-banner {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #e3f7e8;
+      font-size: .9rem;
+      color: #2d7a43;
+      display: none;
+    }
+    .success-banner.show { display: block; }
+
+    /* 控制區（手機方向鍵） */
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .controls-info {
+      font-size: .8rem;
+      color: #555;
+      text-align: center;
+    }
+
+    .controls-grid {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .ctrl-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: none;
+      background: #eef2ff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
+    }
+
+    .ctrl-btn:active {
+      transform: translateY(1px) scale(0.97);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      background: #dce3ff;
+    }
+
+    /* ===== Modal（題目視窗） ===== */
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      z-index: 1000;
+    }
+    .modal-backdrop.active { display: flex; }
+
+    .modal {
+      background: #fff;
+      width: 100%;
+      max-width: 520px;
+      border-radius: 16px;
+      padding: 16px 18px 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.3);
+      max-height: 90vh;
+      overflow: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .modal-close {
+      border: none;
+      background: transparent;
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 4px;
+    }
+    .question-text {
+      font-size: .96rem;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .hint-text {
+      font-size: .84rem;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    .answer-input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #cfd6f5;
+      font-size: .95rem;
+      margin-bottom: 8px;
+    }
+    .feedback {
+      font-size: .86rem;
+      line-height: 1.5;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: #f6f7ff;
+      border: 1px dashed #cfd3f7;
+      margin-bottom: 8px;
+      min-height: 40px;
+    }
+    .feedback.correct-text { color: #2d7a43; }
+    .feedback.wrong-text   { color: #b02a2a; }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border-radius: 999px;
+      padding: 7px 14px;
+      border: none;
+      cursor: pointer;
+      font-size: .88rem;
+      font-weight: 500;
+    }
+    .btn-primary {
+      background: #355dff;
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #e5e7f5;
+      color: #333;
+    }
+    .btn[disabled] {
+      opacity: .7;
+      cursor: default;
+    }
+
+    @media (max-width: 600px) {
+      .game-container { padding: 12px 10px 14px; }
+      h1 { font-size: 1.25rem; }
+      .top-info { flex-direction: column; align-items: flex-start; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>校園失竊事件：密室逃脫（走路版）</h1>
+    <p class="subtitle">
+      操控角色在校園平面圖上走到紅色驚嘆號，才能觸發題目，找回失蹤的校史原稿，
+      同時練習特教與身心障礙相關的觀念！
+    </p>
+
+    <div class="top-info">
+      <div class="badge">目前位置：<span id="locationLabel">大廳</span></div>
+      <div class="badge">已取得密碼：<span id="codesText">尚未取得</span></div>
+      <div class="badge">剩餘時間：<span id="timer">15:00</span></div>
+    </div>
+
+    <div class="map-wrapper" id="mapWrapper">
+      <!-- 0. 大廳 -->
+      <div class="scene scene-lobby active" data-scene="0">
+        <div class="scene-inner">
+          <div class="door"></div>
+          <div class="desk"></div>
+          <div class="notice">大廳　｜　信封裡藏著第一個線索</div>
+          <button class="marker" data-scene="0" style="top:40%;left:50%;">!</button>
+          <!-- 玩家起始位置會放在這裡，之後切換場景會被移動到其他 scene-inner -->
+          <div class="player" id="player">我</div>
+        </div>
+      </div>
+
+      <!-- 1. 教室 A：書本密碼 -->
+      <div class="scene scene-classA" data-scene="1">
+        <div class="scene-inner">
+          <div class="board"></div>
+          <div class="teacher-desk"></div>
+          <div class="book-row">
+            <div class="book"></div>
+            <div class="book"></div>
+            <div class="book"></div>
+            <div class="book"></div>
+          </div>
+          <div class="door"></div>
+          <button class="marker" data-scene="1" style="top:47%;left:50%;">!</button>
+        </div>
+      </div>
+
+      <!-- 2. 教室 B：亮暗燈號 -->
+      <div class="scene scene-classB" data-scene="2">
+        <div class="scene-inner">
+          <div class="board"></div>
+          <div class="lamp-row">
+            <div class="lamp on"></div>
+            <div class="lamp"></div>
+            <div class="lamp on"></div>
+          </div>
+          <div class="door"></div>
+          <button class="marker" data-scene="2" style="top:52%;left:50%;">!</button>
+        </div>
+      </div>
+
+      <!-- 3. 教室 C：體育儲物櫃 -->
+      <div class="scene scene-classC" data-scene="3">
+        <div class="scene-inner">
+          <div class="cabinet"></div>
+          <div class="ball"></div>
+          <div class="ball"></div>
+          <div class="ball"></div>
+          <div class="door"></div>
+          <button class="marker" data-scene="3" style="top:52%;left:30%;">!</button>
+        </div>
+      </div>
+
+      <!-- 4. 辦公室：最終密碼箱 -->
+      <div class="scene scene-office" data-scene="4">
+        <div class="scene-inner">
+          <div class="desk"></div>
+          <div class="safe"></div>
+          <div class="door"></div>
+          <button class="marker" data-scene="4" style="top:52%;left:50%;">!</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="controls-info">
+        用下方方向鍵移動藍色小人物，走到紅色驚嘆號附近就會觸發該場景的謎題。
+      </div>
+      <div class="controls-grid">
+        <div class="controls-row">
+          <button class="ctrl-btn" data-dir="up">▲</button>
+        </div>
+        <div class="controls-row">
+          <button class="ctrl-btn" data-dir="left">◀</button>
+          <button class="ctrl-btn" data-dir="down">▼</button>
+          <button class="ctrl-btn" data-dir="right">▶</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="status-text">
+      小提示：每個場景中的 <span>紅色驚嘆號 ❗</span> 都代表一個謎題，必須讓角色走到附近才會開啟。
+    </p>
+
+    <div id="successBanner" class="success-banner">
+      🎉 恭喜你在時限內找回了校史原稿！也把許多特教與身心障礙相關的概念實際應用在解謎過程中，
+      可以和同學一起回顧每一關的重點。
+    </div>
+  </div>
+
+  <!-- 題目 Modal -->
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">關卡題目</div>
+        <button class="modal-close" id="modalCloseBtn" aria-label="關閉視窗">×</button>
+      </div>
+      <div class="question-text" id="questionText"></div>
+      <div class="hint-text" id="hintText"></div>
+      <input type="text" id="answerInput" class="answer-input" placeholder="請在此輸入答案（數字或文字）" />
+      <div class="feedback" id="feedbackBox">請仔細閱讀題目，再輸入你的答案。</div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelBtn">先關閉，等等再想</button>
+        <button class="btn btn-primary" id="submitBtn">提交答案</button>
+        <button class="btn btn-primary" id="nextSceneBtn" style="display:none;">前往下一個場景 ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== 題目資料（特教主題 + 大廳劇情 + A 題順序打亂） =====
+    const scenesData = [
+      {
+        id: 0,
+        name: "大廳",
+        type: "info",
+        title: "大廳：失竊事件的開始",
+        question:
+          "今天早上，負責保管校史原稿的老師發現原稿不見了，只留下了一個信封。信封裡寫著：\n「想找回校史原稿，就從『知識的房間』開始吧。」\n你們即將在 15 分鐘內解開所有謎題，準備好就可以前往第一間教室。",
+        hint: "提示：「知識的房間」通常是放滿書本、常用來上課、閱讀的教室。",
+        answer: "",
+        explanation:
+          "這一關沒有數字密碼，是故事的開場。當大家了解任務內容後，就可以前往教室 A，開始一步步找回校史原稿，也在過程中接觸特教與身心障礙相關的概念。"
+      },
+      {
+        id: 1,
+        name: "教室 A（特教核心步驟）",
+        type: "code",
+        title: "教室 A：特教系學生的工作流程密碼",
+        question:
+          "教室 A 是平常上「特殊教育概論」與「IEP 設計」的地方，講桌上有四個抽屜，抽屜標籤與貼紙上的數字如下（注意：抽屜排列順序不等於實務流程順序）：\n\n① 抽屜一：家長與跨專業團隊合作會議　→ 貼紙數字 7\n② 抽屜二：實施教學調整與輔具支援　　→ 貼紙數字 4\n③ 抽屜三：功能性評量與需求了解　　　→ 貼紙數字 3\n④ 抽屜四：撰寫個別化教育計畫 IEP　　→ 貼紙數字 1\n\n桌上便條紙寫著：\n「請不要被抽屜目前的順序騙了，\n　先想出『實務上比較常見的流程順序』，\n　再依照那個流程去讀出對應抽屜上的數字，\n　把四個數字接在一起，當作密碼。」\n\n請輸入你推理出的四位數密碼。",
+        hint:
+          "實務上通常是：先了解學生需求與做評量，再撰寫 IEP，然後依計畫進行教學調整與輔具支援，最後透過家長與跨專業團隊持續合作追蹤。",
+        answer: "3147",
+        explanation:
+          "題目給的抽屜順序是：\n抽屜一：合作會議(7)、抽屜二：教學調整(4)、抽屜三：評量需求(3)、抽屜四：撰寫 IEP(1)。\n\n但較常見的實務流程是：\n1️⃣ 功能性評量與了解需求（對應數字 3）\n2️⃣ 撰寫 IEP（對應數字 1）\n3️⃣ 實施教學調整與輔具支援（對應數字 4）\n4️⃣ 家長與跨專業團隊合作會議（對應數字 7）\n\n所以要先想到正確流程，再把對應的數字依序讀出：3-1-4-7，也就是密碼「3147」。"
+      },
+      {
+        id: 2,
+        name: "教室 B（感官與注意力支持）",
+        type: "code",
+        title: "教室 B：感官提示燈與教室規則",
+        question:
+          "教室 B 是實作「班級經營與情緒/注意力支持策略」的地方。\n\n黑板上方有三個長條燈，老師設計了一套簡單的視覺提示，讓注意力較易分散、或對聲音敏感的學生，也能快速知道現在課堂模式：\n\n亮燈：可以小聲討論或活動（用 1 表示）\n暗燈：需要安靜閱讀或專心聽講（用 0 表示）\n\n此刻燈的狀態是：\n\n亮　｜　暗　｜　亮\n\n桌上的提示卡寫著：「請把燈號看成一個三位數的二進位數，再換成十進位。」\n\n請輸入換算後的十進位數字。",
+        hint: "從左到右是 1 0 1（二進位 101），試著算算：4 的位 + 1 的位。",
+        answer: "5",
+        explanation:
+          "依提示，亮 = 1、暗 = 0，所以三格燈依序是 1 0 1，就是二進位的 101。\n將 101₂ 換成十進位為 5（4 + 1）。因此這一關的密碼是「5」。\n\n這樣的視覺提示系統可以搭配口頭說明、座位安排與其他調整，協助 ADHD、自閉症或容易焦慮的學生更快掌握教室狀態，是特教系常會學到的環境調整策略。"
+      },
+      {
+        id: 3,
+        name: "教室 C（融合體育與合理調整）",
+        type: "code",
+        title: "教室 C：融合體育課的器材配置",
+        question:
+          "教室 C 模擬的是體育器材間，牆上貼著一張「融合體育課器材配置示意」，希望身心障礙學生也能一起參與。\n\n地板三個圓形標誌前，分別擺著不同器材與說明：\n\n2：重量較輕、彈性較好的軟式球——適合肌力較弱或動作協調較慢的學生\n5：會發出聲音的球——適合視障學生透過聲音追蹤位置\n9：大面積接球板或布幕——讓害怕失誤的學生也比較容易接到球\n\n旁邊的箭頭標示順序為：\n\n2 → 5 → 9\n\n說明卡寫著：「請依箭頭順序讀出器材編號，把數字接在一起，就是下一段密碼。」\n\n請輸入你得到的三位數密碼。",
+        hint: "照箭頭從左到右讀：2、5、9，直接接成一個三位數。",
+        answer: "259",
+        explanation:
+          "根據箭頭順序依序讀出數字 2、5、9，接在一起就是三位數「259」。\n\n這一關反映的是『合理調整』與『融合體育』的概念：透過改變器材重量、大小、聲音線索等方式，讓不同能力與需求的學生都能有參與感，而不是被排除在活動之外。"
+      },
+      {
+        id: 4,
+        name: "辦公室（特教支持藍圖完成）",
+        type: "code",
+        title: "辦公室：重新拼回特教支持藍圖",
+        question:
+          "你們帶著三段密碼來到辦公室，特教組長的桌上放著一個上鎖的資料櫃，抽屜標籤寫著：「身心障礙學生支持藍圖（特教組專用）」。\n\n旁邊貼著一張指示：\n「請依照取得的順序，將三段密碼直接接在一起，組成完整的最終密碼，用來打開資料櫃。」\n\n已知你們拿到的三段密碼是：\n第一段：3147（反映特教實務流程：評量→IEP→教學調整→合作）\n第二段：5（代表以感官與環境調整支持學生專注）\n第三段：259（象徵在體育課中提供不同器材與合理調整）\n\n請把三段密碼依順序接在一起，輸入八位數的最終密碼。",
+        hint: "只要把 3147、5、259 依取得順序直接接起來，中間不要加任何符號或空格。",
+        answer: "31475259",
+        explanation:
+          "依照指示，將三段密碼依順序相連：第一段 3147、第二段 5、第三段 259，合起來就是「31475259」。\n\n你們成功打開資料櫃，找回了《身心障礙學生支持藍圖》。\n藍圖中的內容，其實正是你們剛在每一關中練習過的觀念：\n- 了解需求與評量 → 撰寫 IEP → 教學調整 → 合作（3147）\n- 利用環境與感官提示支持學生（5）\n- 在體育與活動中做合理調整，讓每個人都能參與（259）\n\n對特教系學生來說，這不只是解謎成功，更是把「如何讓學生被看見、被支持」變成具體行動的練習。"
+      }
+    ];
+
+    // ===== 遊戲時間：15 分鐘 =====
+    const TOTAL_TIME_SEC = 15 * 60; // 15 分鐘
+    let remainingSec = TOTAL_TIME_SEC;
+    let timerId = null;
+    let currentScene = 0;
+    const obtainedCodes = [];
+
+    // 玩家座標（百分比，相對於 scene-inner）
+    let playerX = 80;
+    let playerY = 80;
+    const STEP = 5; // 每次移動步伐（百分比）
+    let modalIsOpen = false;
+
+    // 每個場景的玩家起始位置（top/left 百分比）
+    const sceneStartPositions = {
+      0: { x: 80, y: 75 },
+      1: { x: 80, y: 78 },
+      2: { x: 80, y: 78 },
+      3: { x: 80, y: 78 },
+      4: { x: 80, y: 78 }
+    };
+
+    // ===== DOM =====
+    const sceneEls = document.querySelectorAll(".scene");
+    const markerEls = document.querySelectorAll(".marker");
+    const locationLabel = document.getElementById("locationLabel");
+    const codesText = document.getElementById("codesText");
+    const timerEl = document.getElementById("timer");
+    const successBanner = document.getElementById("successBanner");
+
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const modalTitle = document.getElementById("modalTitle");
+    const questionTextEl = document.getElementById("questionText");
+    const hintTextEl = document.getElementById("hintText");
+    const answerInput = document.getElementById("answerInput");
+    const feedbackBox = document.getElementById("feedbackBox");
+    const modalCloseBtn = document.getElementById("modalCloseBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    const nextSceneBtn = document.getElementById("nextSceneBtn");
+
+    const ctrlBtns = document.querySelectorAll(".ctrl-btn");
+    const playerEl = document.getElementById("player");
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    }
+
+    function updateTimer() {
+      timerEl.textContent = formatTime(remainingSec);
+    }
+
+    function startTimer() {
+      updateTimer();
+      timerId = setInterval(() => {
+        remainingSec--;
+        if (remainingSec <= 0) {
+          remainingSec = 0;
+          updateTimer();
+          clearInterval(timerId);
+          handleTimeUp();
+        } else {
+          updateTimer();
+        }
+      }, 1000);
+    }
+
+    function handleTimeUp() {
+      feedbackBox.textContent =
+        "時間到了！這一輪挑戰結束，可以請老師或主持人一起回顧解題過程，再重新挑戰一次。";
+      feedbackBox.classList.remove("correct-text");
+      feedbackBox.classList.add("wrong-text");
+      modalTitle.textContent = "時間到";
+      questionTextEl.textContent = "15 分鐘已經用完，建議先暫停遊戲與同伴討論哪一關最卡，再重新挑戰！";
+      hintTextEl.textContent = "";
+      answerInput.style.display = "none";
+      submitBtn.style.display = "none";
+      nextSceneBtn.style.display = "none";
+      modalBackdrop.classList.add("active");
+      modalBackdrop.setAttribute("aria-hidden", "false");
+      modalIsOpen = true;
+
+      ctrlBtns.forEach(b => b.disabled = true);
+    }
+
+    function updateLocationLabel() {
+      const data = scenesData[currentScene];
+      locationLabel.textContent = data ? data.name : "";
+    }
+
+    function updateCodesText() {
+      if (!obtainedCodes.length) {
+        codesText.textContent = "尚未取得";
+      } else {
+        codesText.textContent = obtainedCodes.join("　|　");
+      }
+    }
+
+    function attachPlayerToScene(sceneIndex) {
+      const sceneEl = document.querySelector(`.scene[data-scene="${sceneIndex}"]`);
+      if (!sceneEl) return;
+      const inner = sceneEl.querySelector(".scene-inner");
+      if (!inner) return;
+      inner.appendChild(playerEl);
+    }
+
+    function setPlayerToSceneStart(sceneIndex) {
+      const pos = sceneStartPositions[sceneIndex] || { x: 80, y: 80 };
+      playerX = pos.x;
+      playerY = pos.y;
+      updatePlayerPosition();
+    }
+
+    function updatePlayerPosition() {
+      playerEl.style.left = playerX + "%";
+      playerEl.style.top = playerY + "%";
+    }
+
+    function showScene(index) {
+      sceneEls.forEach(el => {
+        if (Number(el.dataset.scene) === index) {
+          el.classList.add("active");
+        } else {
+          el.classList.remove("active");
+        }
+      });
+      currentScene = index;
+      updateLocationLabel();
+      attachPlayerToScene(index);
+      setPlayerToSceneStart(index);
+      modalIsOpen = false;
+    }
+
+    function openPuzzle(sceneIndex) {
+      const data = scenesData[sceneIndex];
+      if (!data) return;
+
+      modalIsOpen = true;
+      modalTitle.textContent = data.title;
+      questionTextEl.textContent = data.question;
+      hintTextEl.textContent = data.hint || "";
+      feedbackBox.textContent = "請仔細閱讀題目，再輸入你的答案。";
+      feedbackBox.classList.remove("correct-text", "wrong-text");
+
+      if (data.type === "info") {
+        answerInput.style.display = "none";
+        submitBtn.textContent = "我準備好了";
+      } else {
+        answerInput.style.display = "block";
+        answerInput.value = "";
+        submitBtn.textContent = "提交答案";
+      }
+
+      nextSceneBtn.style.display = "none";
+      submitBtn.disabled = false;
+
+      modalBackdrop.classList.add("active");
+      modalBackdrop.setAttribute("aria-hidden", "false");
+      if (data.type !== "info") answerInput.focus();
+    }
+
+    function closeModal() {
+      modalBackdrop.classList.remove("active");
+      modalBackdrop.setAttribute("aria-hidden", "true");
+      modalIsOpen = false;
+      answerInput.style.display = "block";
+      submitBtn.style.display = "inline-block";
+    }
+
+    function markSceneSolved(sceneIndex) {
+      markerEls.forEach(m => {
+        if (Number(m.dataset.scene) === sceneIndex) {
+          m.classList.add("done");
+        }
+      });
+    }
+
+    function goToNextScene(fromIndex) {
+      const nextIndex = fromIndex + 1;
+      if (nextIndex >= scenesData.length) {
+        successBanner.classList.add("show");
+        return;
+      }
+      showScene(nextIndex);
+    }
+
+    function checkPlayerNearMarker() {
+      const sceneEl = document.querySelector(`.scene[data-scene="${currentScene}"]`);
+      if (!sceneEl) return;
+      const marker = sceneEl.querySelector(".marker");
+      if (!marker) return;
+
+      const playerRect = playerEl.getBoundingClientRect();
+      const markerRect = marker.getBoundingClientRect();
+
+      const playerCx = playerRect.left + playerRect.width / 2;
+      const playerCy = playerRect.top + playerRect.height / 2;
+      const markerCx = markerRect.left + markerRect.width / 2;
+      const markerCy = markerRect.top + markerRect.height / 2;
+
+      const dx = playerCx - markerCx;
+      const dy = playerCy - markerCy;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      const THRESHOLD = 40; // 觸發距離（像素）
+
+      if (distance <= THRESHOLD && !modalIsOpen) {
+        openPuzzle(currentScene);
+      }
+    }
+
+    function movePlayer(direction) {
+      if (remainingSec <= 0) return;
+
+      if (direction === "up") {
+        playerY -= STEP;
+      } else if (direction === "down") {
+        playerY += STEP;
+      } else if (direction === "left") {
+        playerX -= STEP;
+      } else if (direction === "right") {
+        playerX += STEP;
+      }
+
+      // 限制角色不要跑出場景邊緣
+      if (playerX < 10) playerX = 10;
+      if (playerX > 90) playerX = 90;
+      if (playerY < 12) playerY = 12;
+      if (playerY > 88) playerY = 88;
+
+      updatePlayerPosition();
+      checkPlayerNearMarker();
+    }
+
+    // ===== 事件綁定 =====
+
+    // 方向鍵按鈕（手機）
+    ctrlBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const dir = btn.dataset.dir;
+        movePlayer(dir);
+      });
+    });
+
+    // 鍵盤方向鍵（電腦玩）
+    window.addEventListener("keydown", (e) => {
+      if (remainingSec <= 0) return;
+      if (e.key === "ArrowUp") {
+        movePlayer("up");
+      } else if (e.key === "ArrowDown") {
+        movePlayer("down");
+      } else if (e.key === "ArrowLeft") {
+        movePlayer("left");
+      } else if (e.key === "ArrowRight") {
+        movePlayer("right");
+      }
+    });
+
+    submitBtn.addEventListener("click", () => {
+      const data = scenesData[currentScene];
+      if (!data) return;
+
+      if (data.type === "info") {
+        feedbackBox.textContent = data.explanation;
+        feedbackBox.classList.add("correct-text");
+        markSceneSolved(currentScene);
+        submitBtn.disabled = true;
+        nextSceneBtn.style.display = "inline-block";
+        nextSceneBtn.textContent = "前往教室 A ▶";
+        return;
+      }
+
+      const userAns = (answerInput.value || "").trim();
+      if (!userAns) {
+        feedbackBox.textContent = "請先輸入你的答案喔！";
+        feedbackBox.classList.remove("correct-text");
+        feedbackBox.classList.add("wrong-text");
+        return;
+      }
+
+      const correct = userAns === String(data.answer).trim();
+      if (correct) {
+        feedbackBox.innerHTML = "<strong>答對了！👍</strong> " + data.explanation;
+        feedbackBox.classList.remove("wrong-text");
+        feedbackBox.classList.add("correct-text");
+        submitBtn.disabled = true;
+        nextSceneBtn.style.display = "inline-block";
+        if (currentScene < scenesData.length - 1) {
+          nextSceneBtn.textContent = "前往下一個場景 ▶";
+        } else {
+          nextSceneBtn.textContent = "完成遊戲 🎉";
+        }
+        markSceneSolved(currentScene);
+
+        if (data.answer && !obtainedCodes.includes(String(data.answer))) {
+          obtainedCodes.push(String(data.answer));
+          updateCodesText();
+        }
+
+        if (currentScene === scenesData.length - 1) {
+          successBanner.classList.add("show");
+        }
+      } else {
+        feedbackBox.innerHTML =
+          "<strong>還差一點點～</strong> 可以再想想看線索，或和同學一起討論。";
+        feedbackBox.classList.remove("correct-text");
+        feedbackBox.classList.add("wrong-text");
+      }
+    });
+
+    nextSceneBtn.addEventListener("click", () => {
+      closeModal();
+      const prevIndex = currentScene;
+      goToNextScene(prevIndex);
+    });
+
+    modalCloseBtn.addEventListener("click", closeModal);
+    cancelBtn.addEventListener("click", closeModal);
+    modalBackdrop.addEventListener("click", (e) => {
+      if (e.target === modalBackdrop) closeModal();
+    });
+
+    // ===== 初始化 =====
+    attachPlayerToScene(0);
+    setPlayerToSceneStart(0);
+    updateLocationLabel();
+    updateCodesText();
+    startTimer();
+  </script>
+</body>
+</html>
