@@ -380,6 +380,18 @@
     }
     .success-banner.show { display: block; }
 
+    .success-banner p {
+      margin: 0 0 4px;
+      line-height: 1.5;
+    }
+
+    .success-actions {
+      margin-top: 6px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .controls {
       margin-top: 10px;
       display: flex;
@@ -723,9 +735,16 @@
     </p>
 
     <div id="successBanner" class="success-banner">
-      🎉 恭喜你在時限內集齊大門密碼，成功打開特教系系館的大門！
-      在解謎過程中也實際運用了多個特教與身心障礙相關的觀念，
-      可以和同學一起回顧每一關的重點。
+      <p>🎉 恭喜你在時限內集齊大門密碼，成功打開特教系系館的大門！</p>
+      <p>
+        在這段逃脫旅程中，你練習了站在身心障礙學生的角度思考：
+        了解需求、調整教學與環境、在活動中做合理改變。
+        未來在真實教室裡，也別忘了用同樣的關懷與體諒陪伴每一位學生。
+      </p>
+      <div class="success-actions">
+        <button class="btn btn-secondary" id="stayBtn">待在原地</button>
+        <button class="btn btn-primary" id="restartBtn">重新挑戰一次</button>
+      </div>
     </div>
   </div>
 
@@ -868,6 +887,10 @@
     const ctrlBtns = document.querySelectorAll(".ctrl-btn");
     const playerEl = document.getElementById("player");
 
+    // 結束後的按鈕
+    const stayBtn = document.getElementById("stayBtn");
+    const restartBtn = document.getElementById("restartBtn");
+
     // 信封相關
     const envelopeOverlay = document.getElementById("envelopeOverlay");
     const envelopeCard = document.getElementById("envelopeCard");
@@ -892,6 +915,7 @@
           remainingSec = 0;
           updateTimer();
           clearInterval(timerId);
+          timerId = null;
           handleTimeUp();
         } else {
           updateTimer();
@@ -1204,6 +1228,10 @@
 
         if (currentScene === scenesData.length - 1) {
           successBanner.classList.add("show");
+          if (timerId) {
+            clearInterval(timerId);
+            timerId = null;
+          }
         }
       } else {
         feedbackBox.innerHTML =
@@ -1223,6 +1251,44 @@
     cancelBtn.addEventListener("click", closeModal);
     modalBackdrop.addEventListener("click", (e) => {
       if (e.target === modalBackdrop) closeModal();
+    });
+
+    // 結束後：待在原地 / 重新挑戰
+    function restartGame() {
+      // 重設時間
+      remainingSec = TOTAL_TIME_SEC;
+      if (timerId) {
+        clearInterval(timerId);
+      }
+      startTimer();
+
+      // 清空密碼紀錄
+      obtainedCodes.length = 0;
+      updateCodesText();
+
+      // 清除所有驚嘆號完成狀態
+      markerEls.forEach((m) => m.classList.remove("done"));
+
+      // 隱藏成功訊息
+      successBanner.classList.remove("show");
+
+      // 回到大廳
+      showScene(0);
+
+      // 啟用控制鍵
+      ctrlBtns.forEach((b) => (b.disabled = false));
+
+      // 關閉任何可能開著的題目視窗
+      closeModal();
+    }
+
+    stayBtn.addEventListener("click", () => {
+      // 什麼都不用做：保留成功訊息、保持目前場景，可以自由走動
+      closeModal();
+    });
+
+    restartBtn.addEventListener("click", () => {
+      restartGame();
     });
 
     // 初始化
