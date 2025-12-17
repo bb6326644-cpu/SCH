@@ -121,7 +121,7 @@
       background: #ff3b30;
       color: #fff;
       font-weight: 800;
-      cursor: default; /* 這版用走路觸發，不用點擊 */
+      cursor: default; /* 用走路觸發，不用點擊 */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -564,7 +564,7 @@
           <div class="desk"></div>
           <div class="notice">大廳　｜　信封裡藏著第一個線索</div>
           <button class="marker" data-scene="0" style="top:40%;left:50%;">!</button>
-          <!-- 玩家起始位置會放在這裡，之後切換場景會被移動到其他 scene-inner -->
+          <!-- 玩家起始位置在大廳 -->
           <div class="player" id="player">我</div>
         </div>
       </div>
@@ -625,6 +625,7 @@
     <div class="controls">
       <div class="controls-info">
         用下方方向鍵移動藍色小人物，走到紅色驚嘆號附近就會觸發該場景的謎題。
+        長按按鈕可以持續移動。
       </div>
       <div class="controls-grid">
         <div class="controls-row">
@@ -734,7 +735,7 @@
     ];
 
     // ===== 遊戲時間：15 分鐘 =====
-    const TOTAL_TIME_SEC = 15 * 60; // 15 分鐘
+    const TOTAL_TIME_SEC = 15 * 60;
     let remainingSec = TOTAL_TIME_SEC;
     let timerId = null;
     let currentScene = 0;
@@ -743,10 +744,13 @@
     // 玩家座標（百分比，相對於 scene-inner）
     let playerX = 80;
     let playerY = 80;
-    const STEP = 5; // 每次移動步伐（百分比）
+    const STEP = 5;
+
+    // 連續移動相關
+    let moveIntervalId = null;
     let modalIsOpen = false;
 
-    // 每個場景的玩家起始位置（top/left 百分比）
+    // 每個場景的玩家起始位置
     const sceneStartPositions = {
       0: { x: 80, y: 75 },
       1: { x: 80, y: 78 },
@@ -780,7 +784,7 @@
     function formatTime(sec) {
       const m = Math.floor(sec / 60);
       const s = sec % 60;
-      return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+      return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
     }
 
     function updateTimer() {
@@ -803,12 +807,14 @@
     }
 
     function handleTimeUp() {
+      stopMoving();
       feedbackBox.textContent =
         "時間到了！這一輪挑戰結束，可以請老師或主持人一起回顧解題過程，再重新挑戰一次。";
       feedbackBox.classList.remove("correct-text");
       feedbackBox.classList.add("wrong-text");
       modalTitle.textContent = "時間到";
-      questionTextEl.textContent = "15 分鐘已經用完，建議先暫停遊戲與同伴討論哪一關最卡，再重新挑戰！";
+      questionTextEl.textContent =
+        "15 分鐘已經用完，建議先暫停遊戲與同伴討論哪一關最卡，再重新挑戰！";
       hintTextEl.textContent = "";
       answerInput.style.display = "none";
       submitBtn.style.display = "none";
@@ -817,7 +823,7 @@
       modalBackdrop.setAttribute("aria-hidden", "false");
       modalIsOpen = true;
 
-      ctrlBtns.forEach(b => b.disabled = true);
+      ctrlBtns.forEach((b) => (b.disabled = true));
     }
 
     function updateLocationLabel() {
@@ -854,7 +860,7 @@
     }
 
     function showScene(index) {
-      sceneEls.forEach(el => {
+      sceneEls.forEach((el) => {
         if (Number(el.dataset.scene) === index) {
           el.classList.add("active");
         } else {
@@ -905,7 +911,7 @@
     }
 
     function markSceneSolved(sceneIndex) {
-      markerEls.forEach(m => {
+      markerEls.forEach((m) => {
         if (Number(m.dataset.scene) === sceneIndex) {
           m.classList.add("done");
         }
@@ -922,7 +928,9 @@
     }
 
     function checkPlayerNearMarker() {
-      const sceneEl = document.querySelector(`.scene[data-scene="${currentScene}"]`);
+      const sceneEl = document.querySelector(
+        `.scene[data-scene="${currentScene}"]`
+      );
       if (!sceneEl) return;
       const marker = sceneEl.querySelector(".marker");
       if (!marker) return;
@@ -939,7 +947,7 @@
       const dy = playerCy - markerCy;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      const THRESHOLD = 40; // 觸發距離（像素）
+      const THRESHOLD = 40; // 觸發距離
 
       if (distance <= THRESHOLD && !modalIsOpen) {
         openPuzzle(currentScene);
@@ -959,7 +967,7 @@
         playerX += STEP;
       }
 
-      // 限制角色不要跑出場景邊緣
+      // 邊界限制，避免走出場景
       if (playerX < 10) playerX = 10;
       if (playerX > 90) playerX = 90;
       if (playerY < 12) playerY = 12;
@@ -969,28 +977,60 @@
       checkPlayerNearMarker();
     }
 
+    // ===== 連續移動控制 =====
+    function startMoving(direction) {
+      if (remainingSec <= 0) return;
+      stopMoving();            // 先確保沒有舊的 interval
+      movePlayer(direction);   // 先移動一步
+      moveIntervalId = setInterval(() => {
+        if (!modalIsOpen && remainingSec > 0) {
+          movePlayer(direction);
+        }
+      }, 120); // 每 120ms 移動一次，可再調整快慢
+    }
+
+    function stopMoving() {
+      if (moveIntervalId !== null) {
+        clearInterval(moveIntervalId);
+        moveIntervalId = null;
+      }
+    }
+
     // ===== 事件綁定 =====
 
-    // 方向鍵按鈕（手機）
-    ctrlBtns.forEach(btn => {
+    // 手機方向鍵（長按持續移動）
+    ctrlBtns.forEach((btn) => {
+      const dir = btn.dataset.dir;
+
+      // 點一下也會移動（給想單步走的人）
       btn.addEventListener("click", () => {
-        const dir = btn.dataset.dir;
         movePlayer(dir);
       });
+
+      btn.addEventListener("mousedown", () => {
+        startMoving(dir);
+      });
+      btn.addEventListener("mouseup", stopMoving);
+      btn.addEventListener("mouseleave", stopMoving);
+
+      btn.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        startMoving(dir);
+      }, { passive: false });
+
+      btn.addEventListener("touchend", stopMoving);
+      btn.addEventListener("touchcancel", stopMoving);
     });
 
-    // 鍵盤方向鍵（電腦玩）
+    // 鍵盤方向鍵（電腦玩時也可使用）
     window.addEventListener("keydown", (e) => {
       if (remainingSec <= 0) return;
-      if (e.key === "ArrowUp") {
-        movePlayer("up");
-      } else if (e.key === "ArrowDown") {
-        movePlayer("down");
-      } else if (e.key === "ArrowLeft") {
-        movePlayer("left");
-      } else if (e.key === "ArrowRight") {
-        movePlayer("right");
-      }
+      if (modalIsOpen) return;
+
+      if (e.key === "ArrowUp") movePlayer("up");
+      else if (e.key === "ArrowDown") movePlayer("down");
+      else if (e.key === "ArrowLeft") movePlayer("left");
+      else if (e.key === "ArrowRight") movePlayer("right");
     });
 
     submitBtn.addEventListener("click", () => {
