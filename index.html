@@ -75,7 +75,6 @@
       inset: 0;
       display: none;
     }
-
     .scene.active { display: block; }
 
     .scene-inner {
@@ -369,20 +368,37 @@
       color: #355dff;
     }
 
+    /* ✅ 通關後畫面：置中 Overlay */
     .success-banner {
-      margin-top: 10px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background: #e3f7e8;
-      font-size: .9rem;
-      color: #2d7a43;
+      position: fixed;
+      inset: 0;
       display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.45);
+      z-index: 1100;
+      padding: 16px;
     }
-    .success-banner.show { display: block; }
+    .success-banner.show { display: flex; }
 
-    .success-banner p {
-      margin: 0 0 4px;
+    .success-card {
+      background: #e3f7e8;
+      border-radius: 14px;
+      padding: 12px 14px;
+      max-width: 760px;
+      width: 100%;
+      color: #2d7a43;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+      text-align: left;
+    }
+    .success-card p {
+      margin: 0 0 6px;
       line-height: 1.5;
+    }
+    .success-card hr {
+      border: none;
+      border-top: 1px dashed #b8e0c5;
+      margin: 6px 0 8px;
     }
 
     .success-actions {
@@ -390,6 +406,7 @@
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .controls {
@@ -733,14 +750,50 @@
       小提示：每個場景中的 <span>紅色驚嘆號 ❗</span> 都代表一個線索點，
       先收到信封再解題，才能一步步集齊大門密碼。
     </p>
+  </div>
 
-    <div id="successBanner" class="success-banner">
+  <!-- ✅ 通關後置中 Overlay -->
+  <div id="successBanner" class="success-banner">
+    <div class="success-card">
       <p>🎉 恭喜你在時限內集齊大門密碼，成功打開特教系系館的大門！</p>
       <p>
         在這段逃脫旅程中，你練習了站在身心障礙學生的角度思考：
         了解需求、調整教學與環境、在活動中做合理改變。
         未來在真實教室裡，也別忘了用同樣的關懷與體諒陪伴每一位學生。
       </p>
+
+      <hr>
+
+      <p><strong>為什麼設計這個遊戲？</strong></p>
+      <p>
+        這個遊戲不只是「逃出系館」，而是希望玩家在闖關的過程中，
+        體驗特教系學生在思考教學與支持策略時，會經歷的步驟與觀點。
+      </p>
+      <p>
+        在教室 A，你透過「抽屜流程」認識到特教工作需要先評量需求、再寫 IEP，
+        接著進行教學調整與輔具支援，最後還要和家長與跨專業團隊合作。
+        這提醒我們：支持身心障礙學生，不能只看表面行為，而是要用系統性的流程思考。
+      </p>
+      <p>
+        在教室 B，你看見「亮／暗燈號」的設計，代表老師用視覺提示與環境調整，
+        協助注意力較易分散、對聲音敏感或容易焦慮的學生，能更安心地掌握課堂規則。
+        重點不是降低要求，而是用更清楚的方式幫助學生跟上。
+      </p>
+      <p>
+        在教室 C，你透過不同的球與器材，體驗「合理調整」在融合體育課中的運用：
+        有人需要較輕的球、有的人需要有聲音的球、有人需要大面積的接球板，
+        讓每一位學生都能找到適合自己的參與方式，而不是被排除在活動之外。
+      </p>
+      <p>
+        當你最後輸入「31475259」解鎖大門時，其實也象徵著：
+        只要願意了解學生的需求、調整教學與環境、並與家長和專業團隊合作，
+        就能一點一滴替身心障礙學生打開一扇「真正能走出去的門」。
+      </p>
+      <p>
+        希望當你未來走進真實的教室或特教現場時，還記得這次的遊戲體驗：
+        每一次換位思考、每一個小小的調整，對學生來說，都是很重要的解鎖密碼。
+      </p>
+
       <div class="success-actions">
         <button class="btn btn-secondary" id="stayBtn">待在原地</button>
         <button class="btn btn-primary" id="restartBtn">重新挑戰一次</button>
@@ -780,7 +833,7 @@
   </div>
 
   <script>
-    // ===== 題目資料（數字與概念都保留，改成大門密碼劇情） =====
+    // ===== 題目資料 =====
     const scenesData = [
       {
         id: 0,
@@ -887,11 +940,9 @@
     const ctrlBtns = document.querySelectorAll(".ctrl-btn");
     const playerEl = document.getElementById("player");
 
-    // 結束後的按鈕
     const stayBtn = document.getElementById("stayBtn");
     const restartBtn = document.getElementById("restartBtn");
 
-    // 信封相關
     const envelopeOverlay = document.getElementById("envelopeOverlay");
     const envelopeCard = document.getElementById("envelopeCard");
     const openLetterBtn = document.getElementById("openLetterBtn");
@@ -1179,7 +1230,6 @@
     });
 
     envelopeOverlay.addEventListener("click", (e) => {
-      // 點灰色背景就關掉信封，不開題目
       if (e.target === envelopeOverlay) {
         hideEnvelope();
       }
@@ -1210,7 +1260,7 @@
       const correct = userAns === String(data.answer).trim();
       if (correct) {
         feedbackBox.innerHTML = "<strong>答對了！👍</strong> " + data.explanation;
-        feedbackBox.classList.remove("wrong-text");
+        feedbackBox.classList.remove("correct-text", "wrong-text");
         feedbackBox.classList.add("correct-text");
         submitBtn.disabled = true;
         nextSceneBtn.style.display = "inline-block";
@@ -1232,6 +1282,7 @@
             clearInterval(timerId);
             timerId = null;
           }
+          alert("恭喜逃脫！");
         }
       } else {
         feedbackBox.innerHTML =
@@ -1253,37 +1304,30 @@
       if (e.target === modalBackdrop) closeModal();
     });
 
-    // 結束後：待在原地 / 重新挑戰
     function restartGame() {
-      // 重設時間
       remainingSec = TOTAL_TIME_SEC;
       if (timerId) {
         clearInterval(timerId);
       }
       startTimer();
 
-      // 清空密碼紀錄
       obtainedCodes.length = 0;
       updateCodesText();
 
-      // 清除所有驚嘆號完成狀態
       markerEls.forEach((m) => m.classList.remove("done"));
 
-      // 隱藏成功訊息
       successBanner.classList.remove("show");
 
-      // 回到大廳
       showScene(0);
 
-      // 啟用控制鍵
       ctrlBtns.forEach((b) => (b.disabled = false));
 
-      // 關閉任何可能開著的題目視窗
       closeModal();
     }
 
     stayBtn.addEventListener("click", () => {
-      // 什麼都不用做：保留成功訊息、保持目前場景，可以自由走動
+      // 關掉通關說明，人物留在最後場景
+      successBanner.classList.remove("show");
       closeModal();
     });
 
@@ -1300,4 +1344,3 @@
   </script>
 </body>
 </html>
-
